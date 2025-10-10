@@ -6,7 +6,7 @@ constraint forall(p1, p2 in PROCESS where p1 < p2)(
         var NODE: p1_location = process_placement[p2];
         var NODE: p2_location = process_placement[p2];
   } in
-    process_link[p1, p2] ->
+    process_links[p1, p2] ->
     p1_location = p2_location
     \/ 
     topology[p1_location, p2_location]     

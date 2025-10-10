@@ -15,9 +15,9 @@ array[PROCESS] of int: process_load;
 % Node topology
 array[NODE, NODE] of bool: topology;
 % Process communication (what process pairs need to communicate)
-% If process_link[p1, p2] = true, 
+% If process_links[p1, p2] = true, 
 % then p1 and p2 have to be either on the same node, or on the connected nodes.
-array[PROCESS, PROCESS] of bool: process_link;
+array[PROCESS, PROCESS] of bool: process_links;
 
 % Decisions
 array[PROCESS] of var NODE: process_placement;
