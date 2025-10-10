@@ -1,9 +1,9 @@
-defmodule SmartMapping.MixProject do
+defmodule ClusterMap.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :smart_mapping,
+      app: :cluster_map,
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
