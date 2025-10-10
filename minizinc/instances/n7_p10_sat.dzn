@@ -1,0 +1,8 @@
+node_cpu = array1d(1..7,[788, 612, 595, 904, 786, 834, 750]);
+node_memory = array1d(1..7,[765, 1495, 552, 974, 1568, 705, 850]);
+process_memory = array1d(1..10,[475, 358, 433, 282, 362, 331, 308, 76, 25, 386]);
+process_links = array2d(1..10,1..10,[true, true, false, true, false, true, false, true, false, true, true, true, false, true, true, true, false, true, true, true, false, false, true, false, false, false, true, true, false, true, true, true, false, true, true, false, true, true, false, false, false, true, false, true, true, true, false, true, true, false, true, true, false, false, true, true, true, true, true, false, false, false, true, true, false, true, true, false, true, true, true, true, true, true, true, true, false, true, true, false, false, true, false, false, true, true, true, true, true, true, true, true, true, false, false, false, true, false, true, true]);
+topology = array2d(1..7,1..7,[true, false, false, false, false, true, false, false, true, true, false, true, true, false, false, true, true, true, true, false, true, false, false, true, true, true, true, true, false, true, true, true, true, false, true, true, true, false, true, false, true, true, false, false, true, true, true, true, true]);
+num_processes = 10;
+num_nodes = 7;
+process_load = array1d(1..10,[450, 317, 539, 175, 166, 183, 200, 100, 103, 263]);

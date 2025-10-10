@@ -1,0 +1,33 @@
+{
+    "openFiles": [
+        "models/main.mzn",
+        "instances/n100_p200_sat.dzn",
+        "instances/n50_p100_sat.dzn",
+        "instances/n20_p40_sat.dzn",
+        "instances/n10_p20.dzn",
+        "instances/n3_p6_sat.dzn",
+        "instances/n2_p4_partial.dzn",
+        "instances/n2_p4_unsat.dzn",
+        "instances/n7_p10_sat.dzn"
+    ],
+    "openTab": 0,
+    "projectFiles": [
+        "instances/n100_p200_sat.dzn",
+        "instances/n10_p20.dzn",
+        "instances/n200_p400.dzn",
+        "instances/n20_p40_sat.dzn",
+        "instances/n2_p4_partial.dzn",
+        "instances/n2_p4_unsat.dzn",
+        "instances/n3_p6_sat.dzn",
+        "instances/n50_p100_sat.dzn",
+        "instances/n7_p10_sat.dzn",
+        "models/cpu.mzn",
+        "models/declarations.mzn",
+        "models/main.mzn",
+        "models/memory.mzn",
+        "models/process_links.mzn"
+    ],
+    "selectedBuiltinConfigId": "nl.tudelft.algorithmics.pumpkin",
+    "selectedBuiltinConfigVersion": "0.1.4",
+    "version": 106
+}

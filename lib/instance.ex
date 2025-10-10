@@ -29,21 +29,31 @@ defmodule ClusterMap.Instance do
   end
 
   # Generates adjacency matrix for topology graph
-  defp generate_topology(num_nodes, _opts) do
-    generate_adjacency_matrix(num_nodes)
+  defp generate_topology(num_nodes, opts) do
+    generate_adjacency_matrix(num_nodes, true, Keyword.get(opts, :nodes_connected_probability))
   end
 
-  defp generate_process_links(num_processes, _opts) do
-    generate_adjacency_matrix(num_processes)
+  defp generate_process_links(num_processes, opts) do
+    generate_adjacency_matrix(num_processes, true, Keyword.get(opts, :processes_linked_probability))
   end
 
-  defp generate_adjacency_matrix(num_vertices) do
-    Enum.map(
-      1..(num_vertices * num_vertices),
-      fn _ ->
-        hd(Enum.take_random([true, false], 1))
-      end
-    )
+  defp generate_adjacency_matrix(num_vertices, symmetric?, probability) do
+    Enum.reduce(1..num_vertices * num_vertices, Map.new(), fn n, acc ->
+      row = div(n - 1, num_vertices) + 1
+      col = rem(n - 1, num_vertices) + 1
+      value =
+        cond do
+          col == row -> true # diagonal
+          symmetric? && col < row -> # lower part, copy from upper, if symmetric
+             Map.get(acc, (col - 1) * num_vertices + row)
+          true ->
+            random_bool(probability)
+          end
+
+      Map.put(acc, n, value)
+    end)
+    |> Enum.sort_by(fn {vertex_num, _val} -> vertex_num end)
+    |> Enum.map(fn {_vertex_num, val} -> val end)
     |> Enum.chunk_every(num_vertices)
   end
 
@@ -67,17 +77,23 @@ defmodule ClusterMap.Instance do
     end)
   end
 
+  defp random_bool(probability) do
+    :rand.uniform_real() < probability
+  end
+
   defp default_opts() do
     [
       node_memory_range: 512..2048,
       node_cpu_range: 500..1000,
       process_memory_range: 10..512,
       process_cpu_load_range: 100..600,
+      nodes_connected_probability: 0.75,
+      processes_linked_probability: 0.5,
       handler: &to_minizinc/2
     ]
   end
 
-  defp to_minizinc(instance, opts) do
+  defp to_minizinc(%{num_nodes: num_nodes, num_processes: num_processes} = instance, _opts) do
     {process_memory, process_load} =
       Enum.reduce(instance[:processes], {[], []}, fn %{memory: memory, load: load},
                                                      {m_acc, l_acc} ->
@@ -91,8 +107,8 @@ defmodule ClusterMap.Instance do
 
     MinizincData.to_dzn(
       %{
-        num_nodes: Map.get(instance, :num_nodes),
-        num_processes: Map.get(instance, :num_processes),
+        num_nodes: num_nodes,
+        num_processes: num_processes,
         process_links: Map.get(instance, :process_links),
         topology: Map.get(instance, :topology),
         process_memory: Enum.reverse(process_memory),
@@ -100,5 +116,6 @@ defmodule ClusterMap.Instance do
         node_memory: Enum.reverse(node_memory),
         node_cpu: node_cpu
     })
+    |> then(fn dzn -> File.write("minizinc/instances/n#{num_nodes}_p#{num_processes}.dzn", dzn) end)
   end
 end

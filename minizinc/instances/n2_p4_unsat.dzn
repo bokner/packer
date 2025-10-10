@@ -1,0 +1,8 @@
+node_cpu = array1d(1..2,[625, 697]);
+node_memory = array1d(1..2,[845, 1752]);
+process_memory = array1d(1..4,[164, 451, 15, 276]);
+process_links = array2d(1..4,1..4,[true, false, false, false, false, true, true, false, false, true, true, true, false, false, true, true]);
+topology = array2d(1..2,1..2,[true, true, true, true]);
+num_processes = 4;
+num_nodes = 2;
+process_load = array1d(1..4,[536, 421, 425, 543]);
