@@ -87,8 +87,8 @@ defmodule ClusterMap.Instance do
       node_cpu_range: 500..1000,
       process_memory_range: 10..512,
       process_cpu_load_range: 100..600,
-      nodes_connected_probability: 0.75,
-      processes_linked_probability: 0.5,
+      nodes_connected_probability: 0.85,
+      processes_linked_probability: 0.2,
       handler: &to_minizinc/2
     ]
   end
