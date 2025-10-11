@@ -21,6 +21,3 @@ array[PROCESS, PROCESS] of bool: process_links;
 
 % Decisions
 array[PROCESS] of var NODE: process_placement;
-
-% Nodes and their content (sets of processes on the node)
-array[NODE] of var set of PROCESS: processes_on_node;
