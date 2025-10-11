@@ -20,7 +20,8 @@ defmodule Packer.Instance do
       nodes: generate_nodes(num_nodes, opts),
       processes: generate_processes(num_processes, opts)
     }
-    |> then(fn instance ->
+    |> to_params(opts)
+    |> tap(fn instance ->
       case Keyword.get(opts, :handler) do
         nil -> instance
         handler_fun -> handler_fun.(instance, opts)
@@ -34,14 +35,29 @@ defmodule Packer.Instance do
   end
 
   defp generate_process_links(num_processes, opts) do
-    generate_adjacency_matrix(
+    generate_graph(
       num_processes,
-      true,
+      false,
+      :adjacency_matrix,
       Keyword.get(opts, :processes_linked_probability)
     )
   end
 
-  defp generate_adjacency_matrix(num_vertices, symmetric?, probability) do
+  @spec generate_graph(pos_integer(), boolean(), :adjacency_list | :adjacency_matrix, float()) :: any()
+  defp generate_graph(num_vertices, directed?, :adjacency_matrix, edge_probability) do
+    generate_adjacency_matrix(num_vertices, !directed?, edge_probability)
+  end
+
+  defp generate_adjacency_list(num_vertices, symmetric?, edge_probability) do
+    {_from, _to} = for i <- 1..num_vertices, j <- (i+1)..num_vertices, reduce: [] do
+      acc ->
+        random_bool(edge_probability) &&
+          (symmetric? && [{i, j}, {j, i} | acc] || [{i, j} | acc]) || acc
+    end
+    |> Enum.unzip()
+  end
+
+  defp generate_adjacency_matrix(num_vertices, symmetric?, edge_probability) do
     Enum.reduce(1..(num_vertices * num_vertices), Map.new(), fn n, acc ->
       row = div(n - 1, num_vertices) + 1
       col = rem(n - 1, num_vertices) + 1
@@ -57,7 +73,7 @@ defmodule Packer.Instance do
             Map.get(acc, (col - 1) * num_vertices + row)
 
           true ->
-            random_bool(probability)
+            random_bool(edge_probability)
         end
 
       Map.put(acc, n, value)
@@ -97,13 +113,13 @@ defmodule Packer.Instance do
       node_cpu_range: 500..1000,
       process_memory_range: 10..512,
       process_cpu_load_range: 100..600,
-      nodes_connected_probability: 0.85,
-      processes_linked_probability: 0.2,
-      handler: &to_minizinc/2
+      nodes_connected_probability: 0.9,
+      processes_linked_probability: 0.1,
+      handler: &to_dzn/2
     ]
   end
 
-  defp to_minizinc(%{num_nodes: num_nodes, num_processes: num_processes} = instance, _opts) do
+  defp to_params(%{num_nodes: num_nodes, num_processes: num_processes} = instance, _opts) do
     {process_memory, process_load} =
       Enum.reduce(instance[:processes], {[], []}, fn %{memory: memory, load: load},
                                                      {m_acc, l_acc} ->
@@ -115,7 +131,7 @@ defmodule Packer.Instance do
         {[memory | m_acc], [cpu | l_acc]}
       end)
 
-    MinizincData.to_dzn(%{
+    %{
       num_nodes: num_nodes,
       num_processes: num_processes,
       process_links: Map.get(instance, :process_links),
@@ -124,9 +140,15 @@ defmodule Packer.Instance do
       process_load: Enum.reverse(process_load),
       node_memory: Enum.reverse(node_memory),
       node_cpu: node_cpu
-    })
+    }
+  end
+
+  defp to_dzn(%{num_nodes: num_nodes, num_processes: num_processes} = data, _opts) do
+    data
+    |> MinizincData.to_dzn()
     |> then(fn dzn ->
       File.write("minizinc/instances/n#{num_nodes}_p#{num_processes}.dzn", dzn)
     end)
+
   end
 end
