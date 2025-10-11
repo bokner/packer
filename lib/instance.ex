@@ -3,8 +3,8 @@ defmodule Packer.Instance do
     Generates instance of cluster data.
     It's a map with:
 
-    :topology - the adjacency matrix of topology graph (connections between nodes);
-    :process_links - the adjacency matrix of link graph (pairs of processes that have to communicate);
+    :topology - the adjacency matrix of the topology graph (connections between nodes);
+    :process_links - the adjacency list of the link graph (pairs of processes that have to communicate);
     :nodes - map `node => data`;
     :processes - map `process => data`;
   """
@@ -31,14 +31,14 @@ defmodule Packer.Instance do
 
   # Generates adjacency matrix for topology graph
   defp generate_topology(num_nodes, opts) do
-    generate_adjacency_matrix(num_nodes, true, Keyword.get(opts, :nodes_connected_probability))
+    generate_graph(num_nodes, false, :adjacency_matrix, Keyword.get(opts, :nodes_connected_probability))
   end
 
   defp generate_process_links(num_processes, opts) do
     generate_graph(
       num_processes,
       false,
-      :adjacency_matrix,
+      :adjacency_list,
       Keyword.get(opts, :processes_linked_probability)
     )
   end
@@ -48,13 +48,19 @@ defmodule Packer.Instance do
     generate_adjacency_matrix(num_vertices, !directed?, edge_probability)
   end
 
+  defp generate_graph(num_vertices, directed?, :adjacency_list, edge_probability) do
+    generate_adjacency_list(num_vertices, directed?, edge_probability)
+  end
+
   defp generate_adjacency_list(num_vertices, symmetric?, edge_probability) do
-    {_from, _to} = for i <- 1..num_vertices, j <- (i+1)..num_vertices, reduce: [] do
+    {from, to} = for i <- 1..num_vertices-1, j <- (i+1)..num_vertices, reduce: [] do
       acc ->
         random_bool(edge_probability) &&
           (symmetric? && [{i, j}, {j, i} | acc] || [{i, j} | acc]) || acc
     end
     |> Enum.unzip()
+
+    %{from: from, to: to}
   end
 
   defp generate_adjacency_matrix(num_vertices, symmetric?, edge_probability) do
@@ -131,10 +137,18 @@ defmodule Packer.Instance do
         {[memory | m_acc], [cpu | l_acc]}
       end)
 
+    process_links = Map.get(instance, :process_links)
+    process_links_from = Map.get(process_links, :from)
+    process_links_to = Map.get(process_links, :to)
+
+
     %{
       num_nodes: num_nodes,
       num_processes: num_processes,
-      process_links: Map.get(instance, :process_links),
+      #process_links: Map.get(instance, :process_links),
+      process_links_from: process_links_from,
+      process_links_to: process_links_to,
+      num_process_links: length(process_links_from),
       topology: Map.get(instance, :topology),
       process_memory: Enum.reverse(process_memory),
       process_load: Enum.reverse(process_load),

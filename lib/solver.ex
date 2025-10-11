@@ -13,8 +13,46 @@ defmodule Packer.Solver do
   end
 
   def check(instance, solution) do
-    
+    check_process_links(instance, solution) and
+    check_memory(instance, solution) and
+    check_load(instance, solution)
   end
+
+  def check_process_links(%{
+        process_links_from: links_from,
+        process_links_to: links_to,
+        topology: topology
+      } = _instance, %{"process_placement" => mapping} = _solution) do
+
+     Enum.all?(Enum.zip(links_from, links_to), fn {from, to} ->
+      from_node = Enum.at(mapping, from - 1)
+      to_node = Enum.at(mapping, to - 1)
+      Enum.at(Enum.at(topology, from_node - 1), to_node - 1)
+     end)
+  end
+
+  def check_load(
+    %{
+      process_load: process_load,
+      node_cpu: node_cpu
+      } = _instance, %{"processes_on_node" => mapping} = _solution) do
+    Enum.all?(Enum.zip(node_cpu, mapping),
+    fn {node_load, processes} ->
+      Enum.sum_by(processes, fn p_id -> Enum.at(process_load, p_id - 1) end) <= node_load
+    end)
+  end
+
+  def check_memory(
+    %{
+      process_memory: process_memory,
+      node_memory: node_memory
+      } = _instance, %{"processes_on_node" => mapping} = _solution) do
+    Enum.all?(Enum.zip(node_memory, mapping),
+    fn {node_memory, processes} ->
+      Enum.sum_by(processes, fn p_id -> Enum.at(process_memory, p_id - 1) end) <= node_memory
+    end)
+  end
+
 
   defp default_opts() do
     [

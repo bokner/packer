@@ -1,0 +1,10 @@
+num_process_links = 7;
+process_links_to = array1d(1..7,[8, 10, 8, 7, 5, 5, 3]);
+process_links_from = array1d(1..7,[7, 6, 5, 5, 4, 1, 1]);
+process_memory = array1d(1..10,[491, 170, 47, 248, 358, 85, 251, 134, 503, 127]);
+node_memory = array1d(1..5,[1835, 1871, 593, 999, 1593]);
+node_cpu = array1d(1..5,[949, 643, 730, 556, 817]);
+topology = array2d(1..5,1..5,[true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]);
+num_processes = 10;
+num_nodes = 5;
+process_load = array1d(1..10,[407, 340, 373, 128, 563, 481, 129, 385, 195, 263]);
