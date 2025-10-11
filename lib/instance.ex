@@ -1,4 +1,4 @@
-defmodule ClusterMap.Instance do
+defmodule Packer.Instance do
   @doc """
     Generates instance of cluster data.
     It's a map with:
@@ -34,21 +34,31 @@ defmodule ClusterMap.Instance do
   end
 
   defp generate_process_links(num_processes, opts) do
-    generate_adjacency_matrix(num_processes, true, Keyword.get(opts, :processes_linked_probability))
+    generate_adjacency_matrix(
+      num_processes,
+      true,
+      Keyword.get(opts, :processes_linked_probability)
+    )
   end
 
   defp generate_adjacency_matrix(num_vertices, symmetric?, probability) do
-    Enum.reduce(1..num_vertices * num_vertices, Map.new(), fn n, acc ->
+    Enum.reduce(1..(num_vertices * num_vertices), Map.new(), fn n, acc ->
       row = div(n - 1, num_vertices) + 1
       col = rem(n - 1, num_vertices) + 1
+
       value =
         cond do
-          col == row -> true # diagonal
-          symmetric? && col < row -> # lower part, copy from upper, if symmetric
-             Map.get(acc, (col - 1) * num_vertices + row)
+          # diagonal
+          col == row ->
+            true
+
+          # lower part, copy from upper, if symmetric
+          symmetric? && col < row ->
+            Map.get(acc, (col - 1) * num_vertices + row)
+
           true ->
             random_bool(probability)
-          end
+        end
 
       Map.put(acc, n, value)
     end)
@@ -69,11 +79,11 @@ defmodule ClusterMap.Instance do
 
   def generate_processes(num_processes, opts) do
     Enum.map(1..num_processes, fn n ->
-       %{
-         process_id: n,
-         memory: Enum.take_random(opts[:process_memory_range], 1) |> hd,
-         load: Enum.take_random(opts[:process_cpu_load_range], 1) |> hd
-       }
+      %{
+        process_id: n,
+        memory: Enum.take_random(opts[:process_memory_range], 1) |> hd,
+        load: Enum.take_random(opts[:process_cpu_load_range], 1) |> hd
+      }
     end)
   end
 
@@ -105,17 +115,18 @@ defmodule ClusterMap.Instance do
         {[memory | m_acc], [cpu | l_acc]}
       end)
 
-    MinizincData.to_dzn(
-      %{
-        num_nodes: num_nodes,
-        num_processes: num_processes,
-        process_links: Map.get(instance, :process_links),
-        topology: Map.get(instance, :topology),
-        process_memory: Enum.reverse(process_memory),
-        process_load: Enum.reverse(process_load),
-        node_memory: Enum.reverse(node_memory),
-        node_cpu: node_cpu
+    MinizincData.to_dzn(%{
+      num_nodes: num_nodes,
+      num_processes: num_processes,
+      process_links: Map.get(instance, :process_links),
+      topology: Map.get(instance, :topology),
+      process_memory: Enum.reverse(process_memory),
+      process_load: Enum.reverse(process_load),
+      node_memory: Enum.reverse(node_memory),
+      node_cpu: node_cpu
     })
-    |> then(fn dzn -> File.write("minizinc/instances/n#{num_nodes}_p#{num_processes}.dzn", dzn) end)
+    |> then(fn dzn ->
+      File.write("minizinc/instances/n#{num_nodes}_p#{num_processes}.dzn", dzn)
+    end)
   end
 end
