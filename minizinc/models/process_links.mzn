@@ -1,3 +1,8 @@
+int: num_process_links;
+set of int: PROCESS_LINK = 1..num_process_links;
+array[PROCESS_LINK] of PROCESS: process_links_from;
+array[PROCESS_LINK] of PROCESS: process_links_to;
+
 % If processes p1 and p2 are required to communicate, they 
 % have to be either on the same node, or on the connected nodes
 
