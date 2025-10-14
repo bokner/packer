@@ -8,11 +8,23 @@ array[PROCESS_LINK] of PROCESS: process_links_to;
 
 constraint forall(link in PROCESS_LINK)(
     let {
-        var NODE: p1_location = process_placement[process_links_from[link]];
-        var NODE: p2_location = process_placement[process_links_to[link]];
+        var PROCESS: p_from = process_links_from[link];
+        var PROCESS: p_to = process_links_to[link];
+  
+        var NODE: from_node = process_placement[p_from];
+        var NODE: to_node = process_placement[p_to];
   } in
-      p1_location == p2_location \/
-      topology[p1_location, p2_location]
+      from_node == to_node \/
+      
+      (topology[from_node,  to_node] <-> (
+        node_outgoing_links[from_node, p_from]  = 1 /\
+        node_incoming_links[to_node, p_to]  = 1
+        %p_from in node_outgoing_links[from_node] /\
+        %p_to in node_incoming_links[to_node]
+        )
+        )
+    
+   
       );
       
       

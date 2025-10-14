@@ -100,8 +100,10 @@ defmodule Packer.Instance do
     Enum.map(1..num_nodes, fn n ->
       %{
         node_id: n,
-        memory: Enum.take_random(opts[:node_memory_range], 1) |> hd,
-        cpu: Enum.take_random(opts[:node_cpu_range], 1) |> hd
+        memory: random_value(opts[:node_memory_range]),
+        cpu: random_value(opts[:node_cpu_range]),
+        bandwidth_out: random_value(opts[:node_bandwidth_out_range]),
+        bandwidth_in: random_value(opts[:node_bandwidth_in_range])
       }
     end)
   end
@@ -110,8 +112,9 @@ defmodule Packer.Instance do
     Enum.map(1..num_processes, fn n ->
       %{
         process_id: n,
-        memory: Enum.take_random(opts[:process_memory_range], 1) |> hd,
-        load: Enum.take_random(opts[:process_cpu_load_range], 1) |> hd
+        memory: random_value(opts[:process_memory_range]),
+        load: random_value(opts[:process_cpu_load_range]),
+        message_volume: random_value(opts[:process_message_volume_range]),
       }
     end)
   end
@@ -120,12 +123,19 @@ defmodule Packer.Instance do
     :rand.uniform_real() < probability
   end
 
+  defp random_value(values) do
+    Enum.take_random(values, 1) |> hd
+  end
+
   defp default_opts() do
     [
       node_memory_range: 512..2048,
       node_cpu_range: 500..1000,
+      node_bandwidth_out_range: 100..5000,
+      node_bandwidth_in_range: 100..5000,
       process_memory_range: 10..512,
       process_cpu_load_range: 100..600,
+      process_message_volume_range: 50..200,
       nodes_connected_probability: 0.9,
       processes_linked_probability: 0.1,
       handler: &to_dzn/2
@@ -133,15 +143,16 @@ defmodule Packer.Instance do
   end
 
   defp to_params(%{num_nodes: num_nodes, num_processes: num_processes} = instance, _opts) do
-    {process_memory, process_load} =
-      Enum.reduce(instance[:processes], {[], []}, fn %{memory: memory, load: load},
-                                                     {m_acc, l_acc} ->
-        {[memory | m_acc], [load | l_acc]}
+    {process_memory, process_load, process_msg_volume} =
+      Enum.reduce(instance[:processes], {[], [], []}, fn %{memory: memory, load: load, message_volume: message_volume},
+                                                     {m_acc, l_acc, v_acc} ->
+        {[memory | m_acc], [load | l_acc], [message_volume | v_acc]}
       end)
 
-    {node_memory, node_cpu} =
-      Enum.reduce(instance[:nodes], {[], []}, fn %{memory: memory, cpu: cpu}, {m_acc, l_acc} ->
-        {[memory | m_acc], [cpu | l_acc]}
+    {node_memory, node_cpu, bandwidth_out, bandwidth_in} =
+      Enum.reduce(instance[:nodes], {[], [], [], []},
+      fn %{memory: memory, cpu: cpu, bandwidth_out: b_out, bandwidth_in: b_in}, {m_acc, l_acc, b_out_acc, b_in_acc} ->
+        {[memory | m_acc], [cpu | l_acc], [b_out | b_out_acc], [b_in | b_in_acc]}
       end)
 
     process_links_from = get_in(instance, [:process_links, :from])
@@ -155,8 +166,11 @@ defmodule Packer.Instance do
       topology: Map.get(instance, :topology),
       process_memory: Enum.reverse(process_memory),
       process_load: Enum.reverse(process_load),
+      process_message_volume: process_msg_volume,
       node_memory: Enum.reverse(node_memory),
-      node_cpu: node_cpu
+      node_cpu: node_cpu,
+      node_bandwidth_out: bandwidth_out,
+      node_bandwidth_in: bandwidth_in
     }
     |> then(fn instance ->
       ## Temporary. There is a bug in solverl
