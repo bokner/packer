@@ -1,4 +1,4 @@
-include "bin_packing.mzn";
+include "bin_packing_capa.mzn";
 
 % Available memory and process memory requirements
 array[NODE] of int: node_memory;

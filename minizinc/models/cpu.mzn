@@ -1,5 +1,3 @@
-include "bin_packing.mzn";
-
 % Load capacities and process load demand
 array[NODE] of int: node_cpu;
 array[PROCESS] of int: process_load;
