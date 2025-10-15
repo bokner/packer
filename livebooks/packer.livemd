@@ -24,13 +24,13 @@ instance = Instance.generate(7, 15, nodes_connected_probability: 0.5)
 ```elixir
 cluster = for r <- 0..num_nodes-2, c <- r+1..num_nodes - 1, r != c,  reduce: "" do
   acc ->
-    members_r = Enum.at(solution["processes_on_node"], r) |> Enum.join(",")
-    members_c = Enum.at(solution["processes_on_node"], c) |> Enum.join(",")
+    members_r = Enum.at(solution["processes_on_node"], r) |> Enum.join("\t\t")
+    members_c = Enum.at(solution["processes_on_node"], c) |> Enum.join("\t\t")
 
     connector = 
       (topology |> Enum.at(r) |> Enum.at(c)) && "<===>" || "~~~"
     
-      acc <> "#{r}[Node#{r+1} <#{members_r}>] #{connector} #{c}[Node #{c+1} <#{members_c}>];\n" #|| acc
+      acc <> "#{r}[(Node#{r+1}\n#{members_r})] #{connector} #{c}[(Node #{c+1}\n#{members_c})];\n" #|| acc
 end
 Kino.Mermaid.new("""
 graph TD;
