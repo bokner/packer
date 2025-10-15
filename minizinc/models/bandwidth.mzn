@@ -14,7 +14,3 @@ constraint forall(link in PROCESS_LINK)(
     if remote_call[link] = 1 then process_message_volume[process_links_from[link]] else 0 endif
 
 );
-
-%constraint forall(p in PROCESS)(
-%    not (p in array2set(process_links_from)) -> (process_message_volume[p] = 0)
-%);
