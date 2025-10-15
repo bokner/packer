@@ -23,24 +23,13 @@ constraint forall(link in PROCESS_LINK)(
         var NODE: to_node = process_placement[p_to];
   } in
     if from_node = to_node then 
-      remote_call[link] = 0 %/\ not (p_from in remote_callers) /\ not (p_to in remote_callees)   
+      remote_call[link] = 0 /\ not ((p_from in remote_callers) \/ (p_to in remote_callees))   
     elseif topology[from_node,  to_node] then 
-      remote_call[link] = 1 %/\ p_from in remote_callers /\ p_to in remote_callees
+      remote_call[link] = 1 /\ p_from in remote_callers /\ p_to in remote_callees
     else
       false  
     endif
   );
   
-  constraint forall(link in PROCESS_LINK)(
-    if remote_call[link] = 1 then 
-      (process_links_from[link] in remote_callers)
-      /\
-      (process_links_to[link] in remote_callees)
-    else
-      not ((process_links_from[link] in remote_callers)
-      \/
-      (process_links_to[link] in remote_callees))
-    endif  
-  );
       
     
