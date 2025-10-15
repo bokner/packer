@@ -1,0 +1,47 @@
+# Packer
+
+```elixir
+Mix.install(
+     [
+       {:packer, path: Path.join(System.get_env("HOME"), "projects/packer")},
+       {:kino, "~> 0.17.0"}
+     ]
+)
+```
+
+## Generate and run
+
+```elixir
+alias Packer.{Checker, Instance, Solver}
+instance = Instance.generate(7, 15, nodes_connected_probability: 0.5)
+{:ok, solution} = Solver.run(instance, time_limit: 30_000)
+```
+
+```elixir
+%{num_nodes: num_nodes, topology: topology} = instance
+```
+
+```elixir
+cluster = for r <- 0..num_nodes-2, c <- r+1..num_nodes - 1, r != c,  reduce: "" do
+  acc ->
+    members_r = Enum.at(solution["processes_on_node"], r) |> Enum.join(",")
+    members_c = Enum.at(solution["processes_on_node"], c) |> Enum.join(",")
+
+    connector = 
+      (topology |> Enum.at(r) |> Enum.at(c)) && "<===>" || "~~~"
+    
+      acc <> "#{r}[Node#{r+1} <#{members_r}>] #{connector} #{c}[Node #{c+1} <#{members_c}>];\n" #|| acc
+end
+Kino.Mermaid.new("""
+graph TD;
+  #{cluster}
+""")
+
+
+```
+
+```elixir
+Checker.run(instance, solution)
+```
+
+
