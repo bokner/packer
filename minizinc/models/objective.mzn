@@ -1,0 +1,1 @@
+solve minimize sum(remote_call);
