@@ -17,7 +17,8 @@ defmodule Packer.Solver do
   def check(instance, solution) do
     check_process_links(instance, solution) and
       check_memory(instance, solution) and
-      check_load(instance, solution)
+      check_load(instance, solution) and
+      check_bandwidth(instance, solution)
   end
 
   def check_process_links(
@@ -26,12 +27,15 @@ defmodule Packer.Solver do
           process_links_to: links_to,
           topology: topology
         } = _instance,
-        %{"process_placement" => mapping} = _solution
+        %{"process_placement" => mapping, "remote_call" => remote_call} = _solution
       ) do
-    Enum.all?(Enum.zip(links_from, links_to), fn {from, to} ->
+    Enum.all?(Enum.zip([links_from, links_to, remote_call]), fn {from, to, remote_call_flag} ->
       from_node = Enum.at(mapping, from - 1)
       to_node = Enum.at(mapping, to - 1)
-      Enum.at(Enum.at(topology, from_node - 1), to_node - 1)
+      ## nodes are the same or connected
+      ## remote calls properly identifies
+      (Enum.at(Enum.at(topology, from_node - 1), to_node - 1) and
+         remote_call_flag == 0) || (remote_call_flag == 1 and from_node != to_node)
     end)
   end
 
@@ -63,6 +67,40 @@ defmodule Packer.Solver do
         Enum.sum_by(processes, fn p_id -> Enum.at(process_memory, p_id - 1) end) <= node_memory
       end
     )
+  end
+
+  defp check_bandwidth(
+         %{
+           process_links_from: links_from,
+           process_links_to: links_to,
+           node_bandwidth_out: node_bandwidth_out,
+           process_message_volume: process_message_volume
+         } = _instance,
+         %{"remote_call" => remote_call_flags, "processes_on_node" => processes_on_node} =
+           _solution
+       ) do
+    callers =
+      remote_call_flags
+      |> Enum.zip(links_from)
+      |> Enum.flat_map(fn {r_flag, from} -> (r_flag == 1 && [from]) || [] end)
+      |> MapSet.new()
+
+    caller_volumes =
+      process_message_volume
+      |> Enum.with_index(1)
+      |> Enum.filter(fn {_volume, idx} -> idx in callers end)
+      |> Map.new(fn {v, idx} -> {idx, v} end)
+
+    processes_on_node
+    |> Enum.zip(node_bandwidth_out)
+    |> Enum.all?(fn {processes, node_bandwidth} ->
+      callers_on_node = MapSet.intersection(callers, processes)
+
+      node_bandwidth >=  Enum.sum_by(
+          callers_on_node,
+          fn caller -> Map.get(caller_volumes, caller) end)
+
+    end)
   end
 
   defp default_opts() do

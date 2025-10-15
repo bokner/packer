@@ -67,7 +67,7 @@ defmodule Packer.Instance do
       end
       |> Enum.unzip()
 
-    %{from: from, to: to}
+    %{from: Enum.reverse(from), to: Enum.reverse(to)}
   end
 
   defp generate_adjacency_matrix(num_vertices, symmetric?, edge_probability) do
