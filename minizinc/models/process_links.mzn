@@ -12,7 +12,10 @@ var set of array2set(process_links_to): remote_callees;
 
 
 % If processes p1 and p2 are required to communicate, they 
-% have to be either on the same node, or on the connected nodes
+% have to be either on the same node, or on the connected nodes.
+%
+% We also capture particulars for remote links,
+% to use in other parts of the model (bandwidth constraints).
 
 constraint forall(link in PROCESS_LINK)(
     let {
