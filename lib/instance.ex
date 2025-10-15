@@ -114,7 +114,7 @@ defmodule Packer.Instance do
         process_id: n,
         memory: random_value(opts[:process_memory_range]),
         load: random_value(opts[:process_cpu_load_range]),
-        message_volume: random_value(opts[:process_message_volume_range]),
+        message_volume: random_value(opts[:process_message_volume_range])
       }
     end)
   end
@@ -144,14 +144,23 @@ defmodule Packer.Instance do
 
   defp to_params(%{num_nodes: num_nodes, num_processes: num_processes} = instance, _opts) do
     {process_memory, process_load, process_msg_volume} =
-      Enum.reduce(instance[:processes], {[], [], []}, fn %{memory: memory, load: load, message_volume: message_volume},
-                                                     {m_acc, l_acc, v_acc} ->
+      Enum.reduce(instance[:processes], {[], [], []}, fn %{
+                                                           memory: memory,
+                                                           load: load,
+                                                           message_volume: message_volume
+                                                         },
+                                                         {m_acc, l_acc, v_acc} ->
         {[memory | m_acc], [load | l_acc], [message_volume | v_acc]}
       end)
 
     {node_memory, node_cpu, bandwidth_out, bandwidth_in} =
-      Enum.reduce(instance[:nodes], {[], [], [], []},
-      fn %{memory: memory, cpu: cpu, bandwidth_out: b_out, bandwidth_in: b_in}, {m_acc, l_acc, b_out_acc, b_in_acc} ->
+      Enum.reduce(instance[:nodes], {[], [], [], []}, fn %{
+                                                           memory: memory,
+                                                           cpu: cpu,
+                                                           bandwidth_out: b_out,
+                                                           bandwidth_in: b_in
+                                                         },
+                                                         {m_acc, l_acc, b_out_acc, b_in_acc} ->
         {[memory | m_acc], [cpu | l_acc], [b_out | b_out_acc], [b_in | b_in_acc]}
       end)
 
