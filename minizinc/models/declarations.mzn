@@ -1,3 +1,5 @@
+include "globals.mzn";
+
 int: num_nodes;
 int: num_processes;
 
