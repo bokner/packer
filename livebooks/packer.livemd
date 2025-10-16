@@ -24,13 +24,13 @@ instance = Instance.generate(7, 15, nodes_connected_probability: 0.5)
 ```elixir
 cluster = for r <- 0..num_nodes-2, c <- r+1..num_nodes - 1, r != c,  reduce: "" do
   acc ->
-    members_r = Enum.at(solution["processes_on_node"], r) |> Enum.join("\t\t")
-    members_c = Enum.at(solution["processes_on_node"], c) |> Enum.join("\t\t")
+    members_r = Enum.at(solution["processes_on_node"], r) |> Enum.map_join(" ", fn m -> "<td>#{m}</td>" end)
+    members_c = Enum.at(solution["processes_on_node"], c) |> Enum.map_join("", fn m -> "<td>#{m}</td>" end)
 
     connector = 
       (topology |> Enum.at(r) |> Enum.at(c)) && "<===>" || "~~~"
     
-      acc <> "#{r}[(Node#{r+1}\n#{members_r})] #{connector} #{c}[(Node #{c+1}\n#{members_c})];\n" #|| acc
+      acc <> "#{r}[(Node#{r+1}\n<table><tbody><tr>#{members_r}</tr></tbody></table>)] #{connector} #{c}[(Node #{c+1}\n<table><tbody><tr>#{members_c}</tr></tbody></table>)];\n" #|| acc
 end
 Kino.Mermaid.new("""
 graph TD;
@@ -43,5 +43,3 @@ graph TD;
 ```elixir
 Checker.run(instance, solution)
 ```
-
-
