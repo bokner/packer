@@ -67,7 +67,10 @@ defmodule Packer.Checker do
            node_bandwidth_in: node_bandwidth_in,
            process_message_volume: process_message_volume
          } = _instance,
-         %{"remote_call" => remote_call_flags, "processes_on_node" => processes_on_node} =
+         %{"remote_call" => remote_call_flags, "processes_on_node" => processes_on_node,
+            "node_outbound" => node_outbound,
+            "node_inbound" => node_inbound
+          } =
            _solution,
          direction
        ) do
@@ -90,6 +93,7 @@ defmodule Packer.Checker do
       |> Enum.filter(fn {_volume, idx} -> idx in participants end)
       |> Map.new(fn {v, idx} -> {idx, v} end)
 
+    ## Bandwidth limits per node respected
     processes_on_node
     |> Enum.zip(node_bandwidth)
     |> Enum.all?(fn {processes, node_bandwidth} ->
@@ -101,5 +105,7 @@ defmodule Packer.Checker do
           fn caller -> Map.get(caller_volumes, caller) end
         )
     end)
+    ## Inbound and outbound bandwidths across the cluster are balanced
+    and Enum.sum(node_outbound) == Enum.sum(node_inbound)
   end
 end
