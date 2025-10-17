@@ -25,6 +25,5 @@ constraint forall(link in PROCESS_LINK)(
       remote_call[link] = 1
     endif
   );
-  
-      
+                          
     

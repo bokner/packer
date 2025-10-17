@@ -22,7 +22,9 @@ constraint forall(node in NODE)(
 constraint forall(node in NODE)(
   total_inbound[node] = sum(c in PROCESS_LINK where remote_call[c] = 1 /\ process_links_to[c] in processes_on_node[node])
   (process_message_volume[process_links_from[c]]) 
-  %total_inbound[node] = sum(c in PROCESS_LINK)(if in_node_calls[node, c] = 1 then process_message_volume[process_links_from[c]] else 0 endif) 
+
+% Alternative (create `node_calls` as calls made from the nodes.
+%total_inbound[node] = sum(c in PROCESS_LINK)(if in_node_calls[node, c] = 1 then process_message_volume[process_links_from[c]] else 0 endif) 
 );
 
 constraint forall(node in NODE)(
