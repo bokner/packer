@@ -29,6 +29,6 @@ constraint forall(node in NODE)(
 
 constraint forall(node in NODE)(
   node_inbound[node]
-  <= node_bandwidth_out[node]
+  <= node_bandwidth_in[node]
 );
 
