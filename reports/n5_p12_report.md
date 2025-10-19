@@ -1,4 +1,4 @@
-## Cluster description
+## Cluster description (nodes: 5, processes: 12)
 
 - ### Capacities per node
 
