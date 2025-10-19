@@ -79,32 +79,32 @@ defmodule Packer.Reporter do
     ~s"""
     ## Cluster description (nodes: #{instance.num_nodes}, processes: #{instance.num_processes} )
 
-- ### Capacities per node
+    - ### Capacities per node
 
-|node id| memory | load | out-bandwidth | in-bandwidth
-|----| ---    | ---  | ------------- | ------------
-#{node_capacities_markdown(report)}
+    |node id| memory | load | out-bandwidth | in-bandwidth
+    |----| ---    | ---  | ------------- | ------------
+    #{node_capacities_markdown(report)}
 
-- ### Demand per process
+    - ### Demand per process
 
-|process id| memory|load|message volume|
-|-------| ------|----|--------------
-#{demand_per_process_markdown(report)}
+    |process id| memory|load|message volume|
+    |-------| ------|----|--------------
+    #{demand_per_process_markdown(report)}
 
-- ### Cluster topology
+    - ### Cluster topology
 
-| | #{node_list_markdown(report)} |
-#{topology_markdown(report)}
+    | | #{node_list_markdown(report)} |
+    #{topology_markdown(report)}
 
-- ### Interprocess requirements
+    - ### Process communications
 
     #{required_calls_markdown(report)}
 
-## Feasible mapping
+    ## Feasible mapping
 
-|node id| processes | memory used/avail. | load used/avail.| out-bandwidth used/avail.| in-bandwidth used/avail.
-|----| --- | ----   | ---  | ------------- | ------------
-#{feasible_mapping_markdown(report)}
+    |node id| processes | memory used/avail. | load used/avail.| out-bandwidth used/avail.| in-bandwidth used/avail.
+    |----| --- | ----   | ---  | ------------- | ------------
+    #{feasible_mapping_markdown(report)}
 
     """
   end
@@ -130,7 +130,7 @@ defp demand_per_process_markdown(%{process_demand: demand} = _report) do
 end
 
 defp required_calls_markdown(%{process_communication: links} = _report) do
-  Enum.reduce(links, "", fn {from, to}, acc -> acc <> "\t- *process#{from}* -> *process#{to}*\n" end)
+  Enum.reduce(links, "", fn {from, to}, acc -> acc <> "\t- *process#{from}* \u2b95 *process#{to}*\n" end)
 end
 
 defp feasible_mapping_markdown(%{node_statistics: statistics} = _report) do
