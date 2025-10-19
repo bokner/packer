@@ -77,7 +77,7 @@ defmodule Packer.Reporter do
 
     _node_report =
     ~s"""
-    ## Cluster description
+    ## Cluster description (nodes: #{instance.num_nodes}, processes: #{instance.num_processes} )
 
 - ### Capacities per node
 
