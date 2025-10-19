@@ -1,1 +1,1 @@
-solve minimize sum(remote_call);
+solve minimize sum(remote_calls);

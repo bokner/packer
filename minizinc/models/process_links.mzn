@@ -3,7 +3,7 @@ set of int: PROCESS_LINK = 1..num_process_links;
 array[PROCESS_LINK] of PROCESS: process_links_from;
 array[PROCESS_LINK] of PROCESS: process_links_to;
 
-array[PROCESS_LINK] of var  bool: remote_call;
+array[PROCESS_LINK] of var  bool: remote_calls;
 
 % If processes p1 and p2 are required to communicate, they 
 % have to be either on the same node, or on the connected nodes.
@@ -19,11 +19,11 @@ constraint forall(link in PROCESS_LINK)(
         var NODE: from_node = process_placement[p_from];
         var NODE: to_node = process_placement[p_to];
   } in
-%    remote_call[link] = (from_node != to_node) /\ topology[from_node,  to_node]
+%    remote_calls[link] = (from_node != to_node) /\ topology[from_node,  to_node]
      if from_node = to_node then 
-       remote_call[link] = false
+       remote_calls[link] = false
      else topology[from_node,  to_node] /\ 
-       remote_call[link] = true
+       remote_calls[link] = true
      endif
   );
                           

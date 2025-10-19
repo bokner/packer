@@ -12,7 +12,7 @@ defmodule Packer.Checker do
           process_links_to: links_to,
           topology: topology
         } = _instance,
-        %{"process_placement" => mapping, "remote_call" => remote_call} = _solution
+        %{"process_placement" => mapping, "remote_calls" => remote_call} = _solution
       ) do
     Enum.all?(Enum.zip([links_from, links_to, remote_call]), fn {from, to, remote_call_flag} ->
       from_node = Enum.at(mapping, from - 1)
@@ -27,12 +27,12 @@ defmodule Packer.Checker do
   def check_load(
         %{
           process_load: process_load,
-          node_cpu: node_cpu
+          node_load: node_load
         } = _instance,
         %{"processes_on_node" => mapping} = _solution
       ) do
     Enum.all?(
-      Enum.zip(node_cpu, mapping),
+      Enum.zip(node_load, mapping),
       fn {node_load, processes} ->
         Enum.sum_by(processes, fn p_id -> Enum.at(process_load, p_id - 1) end) <= node_load
       end
@@ -67,7 +67,7 @@ defmodule Packer.Checker do
            node_bandwidth_in: node_bandwidth_in,
            process_message_volume: process_message_volume
          } = _instance,
-         %{"remote_call" => remote_call_flags, "processes_on_node" => processes_on_node,
+         %{"remote_calls" => remote_call_flags, "processes_on_node" => processes_on_node,
             "node_outbound" => node_outbound,
             "node_inbound" => node_inbound
           } =

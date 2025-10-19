@@ -101,7 +101,7 @@ defmodule Packer.Instance do
       %{
         node_id: n,
         memory: random_value(opts[:node_memory_range]),
-        cpu: random_value(opts[:node_cpu_range]),
+        cpu: random_value(opts[:node_load_range]),
         bandwidth_out: random_value(opts[:node_bandwidth_out_range]),
         bandwidth_in: random_value(opts[:node_bandwidth_in_range])
       }
@@ -130,10 +130,10 @@ defmodule Packer.Instance do
   defp default_opts() do
     [
       node_memory_range: 512..2048,
-      node_cpu_range: 500..1000,
-      node_bandwidth_out_range: 100..5000,
-      node_bandwidth_in_range: 100..5000,
-      process_memory_range: 10..512,
+      node_load_range: 500..1000,
+      node_bandwidth_out_range: 100..1000,
+      node_bandwidth_in_range: 100..1000,
+      process_memory_range: 256..512,
       process_cpu_load_range: 100..600,
       process_message_volume_range: 50..200,
       nodes_connected_probability: 0.9,
@@ -153,7 +153,7 @@ defmodule Packer.Instance do
         {[memory | m_acc], [load | l_acc], [message_volume | v_acc]}
       end)
 
-    {node_memory, node_cpu, bandwidth_out, bandwidth_in} =
+    {node_memory, node_load, bandwidth_out, bandwidth_in} =
       Enum.reduce(instance[:nodes], {[], [], [], []}, fn %{
                                                            memory: memory,
                                                            cpu: cpu,
@@ -177,7 +177,7 @@ defmodule Packer.Instance do
       process_load: Enum.reverse(process_load),
       process_message_volume: process_msg_volume,
       node_memory: Enum.reverse(node_memory),
-      node_cpu: node_cpu,
+      node_load: node_load,
       node_bandwidth_out: bandwidth_out,
       node_bandwidth_in: bandwidth_in
     }
