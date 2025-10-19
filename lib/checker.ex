@@ -20,7 +20,7 @@ defmodule Packer.Checker do
       ## nodes are the same or connected
       ## remote calls properly identifies
       (Enum.at(Enum.at(topology, from_node - 1), to_node - 1) and
-         remote_call_flag == 0) || (remote_call_flag == 1 and from_node != to_node)
+         remote_call_flag == false) || (remote_call_flag == true and from_node != to_node)
     end)
   end
 
@@ -84,7 +84,7 @@ defmodule Packer.Checker do
     participants =
       remote_call_flags
       |> Enum.zip(links)
-      |> Enum.flat_map(fn {r_flag, process_id} -> (r_flag == 1 && [process_id]) || [] end)
+      |> Enum.flat_map(fn {r_flag, process_id} -> (r_flag == true && [process_id]) || [] end)
       |> MapSet.new()
 
     caller_volumes =
