@@ -1,6 +1,6 @@
 # Packer 
 
-**Experiments with allocation of processes across network clusters**
+**Experiments with solving allocation of processes across network clusters**
 
 ## Goal
 
