@@ -8,7 +8,7 @@ across the cluster that satisfies the constraints imposed by resources available
 ## Method
 
 Constraint programming, bin packing with side constraints. 
-[MiniZinc models](https://github.com/bokner/packer/tree/main/minizinc/models)
+- [MiniZinc models](https://github.com/bokner/packer/tree/main/minizinc/models)
 
 ## Small example ([more examples](https://github.com/bokner/packer/tree/main/reports)) 
 
