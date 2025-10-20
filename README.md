@@ -13,7 +13,7 @@ Constraint programming, bin packing with side constraints.
 ## Small example ([more examples](https://github.com/bokner/packer/tree/main/reports)) 
 
 Below is an instance of a 4-node cluster configuration, with 8 processes we'd like to place on cluster nodes, such that
-the demand for resources required by processes would be satisfied.
+the demand for resources required by processes and the inter-process communication requirements would be satisfied.
 
 The node resources consist of
 - available memory
