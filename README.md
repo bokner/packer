@@ -5,7 +5,7 @@
 Given the description of the cluster and processes, find the distribution of the processes
 across the cluster that satisfies the constraints imposed by resources available and processing demands. 
 
-## Example
+## Small example ([more examples](https://github.com/bokner/packer/tree/main/reports)) 
 
 Below is an instance of a 4-node cluster configuration, with 8 processes we'd like to place on cluster nodes, such that
 the demand for resources required by processes would be satisfied.
@@ -79,5 +79,4 @@ described above:
 |  2| {3,6} | 775/2007 | 687/808 | 0/159 | 50/844 
 |  3| {7} | 263/535 | 368/952 | 0/161 | 102/563 
 |  4| {4,5} | 841/1010 | 488/986 | 0/667 | 0/515 
-
 
