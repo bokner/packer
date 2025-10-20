@@ -15,12 +15,12 @@ Constraint programming, bin packing with side constraints.
 Below is an instance of a 4-node cluster configuration, with 8 processes we'd like to place on cluster nodes, such that
 the demand for resources required by processes and the inter-process communication requirements would be satisfied.
 
-The node resources consist of
+The node resources consist of:
 - available memory
 - available load
 - network bandwidth (in and out)
   
-The process demand consists of 
+The process demands consist of 
 - memory;
 - load;
 - volume of the payload sent over the network to peer processes;
