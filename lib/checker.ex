@@ -1,4 +1,13 @@
 defmodule Packer.Checker do
+  @spec run(
+          %{
+            :process_links_from => any(),
+            :process_links_to => any(),
+            :topology => any(),
+            optional(any()) => any()
+          },
+          map()
+        ) :: boolean()
   def run(instance, solution) do
     check_process_links(instance, solution) and
       check_memory(instance, solution) and
@@ -6,24 +15,39 @@ defmodule Packer.Checker do
       check_bandwidth(instance, solution)
   end
 
+  @spec check_process_links(
+          %{
+            :process_links_from => any(),
+            :process_links_to => any(),
+            :topology => any(),
+            optional(any()) => any()
+          },
+          map()
+        ) :: boolean()
   def check_process_links(
         %{
           process_links_from: links_from,
           process_links_to: links_to,
           topology: topology
         } = _instance,
-        %{"process_placement" => mapping, "remote_calls" => remote_call} = _solution
+        %{"process_placement" => mapping, "remote_call_set" => remote_calls} = _solution
       ) do
-    Enum.all?(Enum.zip([links_from, links_to, remote_call]), fn {from, to, remote_call_flag} ->
+    Enum.all?(remote_calls, fn link_id ->
+      from = Enum.at(links_from, link_id - 1)
+      to = Enum.at(links_to, link_id - 1)
       from_node = Enum.at(mapping, from - 1)
       to_node = Enum.at(mapping, to - 1)
       ## nodes are the same or connected
       ## remote calls properly identifies
-      (Enum.at(Enum.at(topology, from_node - 1), to_node - 1) and
-         remote_call_flag == false) || (remote_call_flag == true and from_node != to_node)
+      Enum.at(Enum.at(topology, from_node - 1), to_node - 1) and
+        from_node != to_node
     end)
   end
 
+  @spec check_load(
+          %{:node_load => any(), :process_load => any(), optional(any()) => any()},
+          map()
+        ) :: boolean()
   def check_load(
         %{
           process_load: process_load,
@@ -39,6 +63,10 @@ defmodule Packer.Checker do
     )
   end
 
+  @spec check_memory(
+          %{:node_memory => any(), :process_memory => any(), optional(any()) => any()},
+          map()
+        ) :: boolean()
   def check_memory(
         %{
           process_memory: process_memory,
@@ -67,10 +95,12 @@ defmodule Packer.Checker do
            node_bandwidth_in: node_bandwidth_in,
            process_message_volume: process_message_volume
          } = _instance,
-         %{"remote_calls" => remote_call_flags, "processes_on_node" => processes_on_node,
-            "node_outbound" => node_outbound,
-            "node_inbound" => node_inbound
-          } =
+         %{
+           "remote_call_set" => remote_calls,
+           "processes_on_node" => processes_on_node,
+           "node_outbound" => node_outbound,
+           "node_inbound" => node_inbound
+         } =
            _solution,
          direction
        ) do
@@ -82,10 +112,7 @@ defmodule Packer.Checker do
       end
 
     participants =
-      remote_call_flags
-      |> Enum.zip(links)
-      |> Enum.flat_map(fn {r_flag, process_id} -> (r_flag == true && [process_id]) || [] end)
-      |> MapSet.new()
+      MapSet.new(remote_calls, fn link_id -> Enum.at(links, link_id - 1) end)
 
     caller_volumes =
       process_message_volume
@@ -94,6 +121,7 @@ defmodule Packer.Checker do
       |> Map.new(fn {v, idx} -> {idx, v} end)
 
     ## Bandwidth limits per node respected
+    ## Inbound and outbound bandwidths across the cluster are balanced
     processes_on_node
     |> Enum.zip(node_bandwidth)
     |> Enum.all?(fn {processes, node_bandwidth} ->
@@ -104,8 +132,7 @@ defmodule Packer.Checker do
           callers_on_node,
           fn caller -> Map.get(caller_volumes, caller) end
         )
-    end)
-    ## Inbound and outbound bandwidths across the cluster are balanced
-    and Enum.sum(node_outbound) == Enum.sum(node_inbound)
+    end) and
+      Enum.sum(node_outbound) == Enum.sum(node_inbound)
   end
 end
