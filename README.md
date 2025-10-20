@@ -5,6 +5,11 @@
 Given the description of the cluster and processes, find the distribution of the processes
 across the cluster that satisfies the constraints imposed by resources available and processing demands. 
 
+## Method
+
+Constraint programming, bin packing with side constraints. 
+[MiniZinc models](https://github.com/bokner/packer/tree/main/minizinc/models)
+
 ## Small example ([more examples](https://github.com/bokner/packer/tree/main/reports)) 
 
 Below is an instance of a 4-node cluster configuration, with 8 processes we'd like to place on cluster nodes, such that
