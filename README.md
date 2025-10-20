@@ -1,18 +1,8 @@
 # Packer 
 
-**TODO: Add description**
+**Experiments with resource optimization for network cluster**
 
-## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `smart_mapping` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:smart_mapping, "~> 0.1.0"}
-  ]
-end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
