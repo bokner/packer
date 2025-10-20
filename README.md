@@ -1,9 +1,10 @@
 # Packer 
 
-**Experiments with resource optimization for network cluster**
+**Experiments with allocation of processes across network clusters**
 
-Given the description of the cluster and processes, find the distribution of the processes
-across the cluster that satisfies the constraints imposed by resources available and processing demands. 
+## Goal
+
+Based on configuration and resource capacities of individual nodes in network cluster, find the placement of the processes across the cluster that satisfies the constraints imposed by processing demands. 
 
 ## Method
 
@@ -23,7 +24,7 @@ The node resources consist of:
 The process demands consist of 
 - memory;
 - load;
-- volume of the payload sent over the network to peer processes;
+- the volume of outgoing network traffic 
 
 Additionally:
 - The topology of the cluster describes how the nodes are connected;
