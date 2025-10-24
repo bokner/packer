@@ -1,1 +1,1 @@
-solve minimize card(remote_call_set);
+solve minimize sum(remote_calls);
