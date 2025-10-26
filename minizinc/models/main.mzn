@@ -5,4 +5,4 @@ include "bandwidth.mzn";
 include "process_links.mzn";
 include "auxillary.mzn";
 
-include "objective.mzn";
+%include "objective.mzn";

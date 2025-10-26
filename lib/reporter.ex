@@ -1,11 +1,15 @@
 defmodule Packer.Reporter do
+  import Packer.Utils
+
   @spec run(map(), map()) :: %{
           node_statistics: any(),
           process_communication: [{any(), any()}],
           process_demand: map(),
           topology: any()
         }
-  def run(instance, %{"processes_on_node" => processes} = solution) do
+  def run(instance, %{"process_placement" => placement} = solution) do
+    processes = nodes_to_processes_mapping(placement)
+
     %{
       node_statistics:
         processes
@@ -36,16 +40,15 @@ defmodule Packer.Reporter do
            process_memory: process_memory,
            node_load: load,
            process_load: process_load
-         } = instance,
+         } = _instance,
          %{
            "node_inbound" => traffic_in,
            "node_outbound" => traffic_out,
-           "processes_on_node" => processes,
-           "remote_call_set" => remote_calls
+           "process_placement" => placement
          } = _solution
        ) do
     idx = node_idx - 1
-    node_processes = Enum.at(processes, idx)
+    node_processes = Enum.at(nodes_to_processes_mapping(placement), idx)
 
     %{
       traffic_in: Enum.at(traffic_in, idx),
@@ -57,30 +60,6 @@ defmodule Packer.Reporter do
       load_used: Enum.sum_by(node_processes, fn p_id -> Enum.at(process_load, p_id - 1) end),
       memory_available: Enum.at(memory, idx),
       load_available: Enum.at(load, idx)
-    }
-    |> Map.merge(get_calls(instance, node_processes, remote_calls))
-  end
-
-  defp get_calls(
-         %{process_links_to: links_to, process_links_from: links_from} = _instance,
-         node_processes,
-         remote_calls
-       ) do
-    # `remote_calls` is a set of indices into `process_links_to` and `process_links_from` lists.
-    {calls_out_count, calls_in_count} =
-      Enum.reduce(remote_calls, {0, 0}, fn link_id, {out_count, in_count} ->
-        from_process = Enum.at(links_from, link_id - 1)
-        to_process = Enum.at(links_to, link_id - 1)
-
-        {
-          (from_process in node_processes && out_count + 1) || out_count,
-          (to_process in node_processes && in_count + 1) || in_count
-        }
-      end)
-
-    %{
-      calls_out_count: calls_out_count,
-      calls_in_count: calls_in_count
     }
   end
 
