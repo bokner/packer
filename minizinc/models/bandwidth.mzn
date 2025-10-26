@@ -1,4 +1,4 @@
-include "bin_packing_var_weights.mzn";
+%include "bin_packing_var_weights.mzn";
 
 % Available memory and process memory requirements
 array[NODE] of int: node_bandwidth_out;
