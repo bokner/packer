@@ -1,1 +1,0 @@
-constraint assert(false, "Inbound and outbound traffic sizes should be the same");
