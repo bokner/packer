@@ -1,0 +1,11 @@
+test check1(bool: b,string: s) =
+  if b then true else trace_stdout("ERROR: "++s++"\n",false) endif;
+
+
+
+output [
+  if check1(sum(node_outbound) = sum(node_inbound), "traffic totals mismatch")
+  then "CORRECT: all constraints hold.\n"
+  else "INCORRECT\n"
+  endif
+];
