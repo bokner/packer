@@ -1,37 +1,24 @@
-%include "bin_packing_var_weights.mzn";
-
-% Available memory and process memory requirements
+% Available bandwidth (in and out) per node
 array[NODE] of int: node_bandwidth_out;
 array[NODE] of int: node_bandwidth_in;
 
+%% Message volume per process
 array[PROCESS] of int: process_message_volume;
 
 array[NODE] of var 0..max(node_bandwidth_out): node_outbound;
 array[NODE] of var 0..max(node_bandwidth_in): node_inbound;
 
-array[PROCESS_LINK] of var 0..max(process_message_volume): remote_message_volume = [remote_calls[c] * process_message_volume[process_links_from[c]] | c in PROCESS_LINK];
-
-%var 0..sum(process_message_volume): total_remote_message_volume = sum(remote_message_volume);
-
-%constraint sum(node_outbound) = sum(node_inbound); 
-
-  %/\ 
-  %sum(node_inbound) = total_remote_message_volume;
-
 
 %% Outbound load
-% constraint forall(node in NODE)(
-%   node_outbound[node] = sum(c in links_from_node[node] where remote_calls[c])(
-%     remote_message_volume[c]
-%   ) 
-% );
-
 constraint forall (node in NODE) (
   node_outbound[node] = sum (c in PROCESS_LINK) (
-  remote_message_volume[c] * (process_placement[process_links_from[c]] = node))
+    let {
+    var PROCESS: sender = process_links_from[c];
+    var NODE: sender_node = process_placement[sender];
+  } in
+  process_message_volume[sender] * (remote_calls[c] /\ (sender_node = node)))
 );
 
-%constraint bin_packing_var_weights(node_bandwidth_out, out_link_placement, remote_message_volume);
 
 constraint forall(node in NODE)(
   node_outbound[node]
@@ -39,19 +26,16 @@ constraint forall(node in NODE)(
 );
 
 % Inbound load
-% constraint forall(node in NODE)(
-%   node_inbound[node] = sum(c in links_to_node[node] where remote_calls[c])(
-%     process_message_volume[process_links_from[c]]
-%   ) 
-% );
-
 constraint forall (node in NODE) (
   node_inbound[node] = sum (c in PROCESS_LINK) (
-  remote_message_volume[c] * (process_placement[process_links_to[c]] = node))
+    let {
+    var PROCESS: sender = process_links_from[c];
+    var PROCESS: receiver = process_links_to[c];
+    var NODE: receiver_node = process_placement[receiver];
+  } in
+  process_message_volume[sender] * (remote_calls[c] /\ (receiver_node = node)))
 );
 
-
-%constraint bin_packing_var_weights(node_bandwidth_in, in_link_placement, remote_message_volume);
 
 
 constraint forall(node in NODE)(
@@ -59,5 +43,7 @@ constraint forall(node in NODE)(
   <= node_bandwidth_in[node]
 );
 
+%% Redundant constraints
+constraint sum(node_outbound) = sum(c in PROCESS_LINK)(remote_calls[c] * process_message_volume[process_links_from[c]]);
 
 

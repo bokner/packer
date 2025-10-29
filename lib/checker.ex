@@ -34,10 +34,10 @@ defmodule Packer.Checker do
           process_links_to: links_to,
           topology: topology
         } = _instance,
-        %{"process_placement" => placement, "remote_calls" => remote_call_flags} = _solution
+        %{"process_placement" => placement} = _solution
       ) do
-    remote_call_flags
-    |> get_remote_calls()
+
+    get_remote_calls(links_from, links_to, placement)
     |> Enum.all?(fn link_id ->
       from = Enum.at(links_from, link_id - 1)
       to = Enum.at(links_to, link_id - 1)
@@ -107,7 +107,6 @@ defmodule Packer.Checker do
            process_message_volume: process_message_volume
          } = _instance,
          %{
-           "remote_calls" => remote_call_flags,
            "process_placement" => placement,
            "node_outbound" => node_outbound,
            "node_inbound" => node_inbound
@@ -123,8 +122,7 @@ defmodule Packer.Checker do
       end
 
     participants =
-      remote_call_flags
-      |> get_remote_calls()
+      get_remote_calls(links_from, links_to, placement)
       |> MapSet.new(fn link_id -> Enum.at(links, link_id - 1) end)
 
     caller_volumes =
@@ -151,12 +149,18 @@ defmodule Packer.Checker do
     |> tap(fn valid? -> !valid? && Logger.error("Bandwidth check failed") end)
   end
 
-  defp get_remote_calls(flags) do
-    {_, remote_calls} =
-      Enum.reduce(flags, {1, MapSet.new()}, fn remote_call?, {idx, acc} ->
-        {idx + 1, (remote_call? && MapSet.put(acc, idx)) || acc}
-      end)
+  def get_remote_calls(links_from, links_to, process_placement) do
+    Enum.zip(links_from, links_to)
+    |> Enum.with_index(1)
+    |> Enum.reduce(MapSet.new(), fn {{from, to}, link_id}, acc ->
+      Enum.at(process_placement, from - 1) != Enum.at(process_placement, to - 1) &&
+      MapSet.put(acc, link_id) || acc
+    end)
+    # {_, remote_calls} =
+    #   Enum.reduce(flags, {1, MapSet.new()}, fn remote_call?, {idx, acc} ->
+    #     {idx + 1, (remote_call? && MapSet.put(acc, idx)) || acc}
+    #   end)
 
-    remote_calls
+    # remote_calls
   end
 end

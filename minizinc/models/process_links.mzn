@@ -19,21 +19,18 @@ constraint forall(link in PROCESS_LINK)(
   
          var NODE: from_node = process_placement[p_from];
          var NODE: to_node = process_placement[p_to];
+         var bool: colocated = (process_placement[p_from] = process_placement[p_to])
+
    } in
 
   (
-  (process_placement[p_from] != 
-  process_placement[p_to]) /\ topology[from_node, to_node]
-  ) <-> remote_calls[link] 
+   if colocated then
+    remote_calls[link] = false
+   elseif topology[from_node, to_node] then
+    remote_calls[link] = true
+    else
+      false
+    endif
+  )  
 );
 
-
-% constraint forall(link in PROCESS_LINK)(
-%   remote_calls[link] <-> (
-%     process_placement[process_links_from[link]] = out_link_placement[link]
-%     /\
-%     process_placement[process_links_to[link]] = in_link_placement[link]
-    
-  
-%   )
-% );
