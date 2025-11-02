@@ -8,17 +8,38 @@ defmodule Packer.Instance do
     :nodes - map `node => data`;
     :processes - map `process => data`;
   """
+  import Packer.Utils
+
   @spec generate(pos_integer(), pos_integer(), Keyword.t()) :: map()
   def generate(num_nodes, num_processes, opts \\ []) do
-    opts = Keyword.merge(default_opts(), opts)
+    opts =
+      default_opts()
+      |> Keyword.merge(opts)
+      |> Keyword.put(
+        :node_split,
+        random_split(num_processes, num_nodes)
+        |> then(fn partitions ->
+          [first | rest] = partitions
+
+          Enum.reduce(rest, [first], fn partition_size, [h | _] = acc ->
+            [h + partition_size | acc]
+          end)
+          |> Enum.reverse()
+        end)
+      )
+
+    processes = generate_processes(num_processes, opts)
+    process_links = generate_process_links(num_processes, opts)
+    topology = generate_topology(num_nodes, process_links, opts)
+    nodes = generate_nodes(processes, process_links, opts)
 
     %{
       num_nodes: num_nodes,
       num_processes: num_processes,
-      topology: generate_topology(num_nodes, opts),
-      process_links: generate_process_links(num_processes, opts),
-      nodes: generate_nodes(num_nodes, opts),
-      processes: generate_processes(num_processes, opts)
+      topology: topology,
+      process_links: process_links,
+      nodes: nodes,
+      processes: processes
     }
     |> to_params(opts)
     |> tap(fn instance ->
@@ -29,13 +50,45 @@ defmodule Packer.Instance do
     end)
   end
 
-  # Generates adjacency matrix for topology graph
-  defp generate_topology(num_nodes, opts) do
+  def generate_processes(num_processes, opts) do
+    Enum.map(1..num_processes, fn n ->
+      %{
+        id: n,
+        memory: random_value(opts[:process_memory_range]),
+        load: random_value(opts[:process_load_range]),
+        message_volume: random_value(opts[:process_message_volume_range])
+      }
+    end)
+  end
+
+  # # Generates adjacency matrix for topology graph
+  defp generate_topology(num_nodes, process_links, opts) do
+    connected_by_processes =
+      Enum.reduce(Enum.zip(process_links.from, process_links.to), MapSet.new(), fn {from_process,
+                                                                                    to_process},
+                                                                                   acc ->
+        from_node = process_home(from_process, opts)
+        to_node = process_home(to_process, opts)
+
+        if from_node != to_node do
+          MapSet.put(acc, {from_node, to_node})
+        else
+          acc
+        end
+      end)
+
+    ## two nodes being connected
     generate_graph(
       num_nodes,
       false,
       :adjacency_matrix,
-      Keyword.get(opts, :nodes_connected_probability)
+      fn node1, node2 ->
+        if {node1, node2} in connected_by_processes do
+          1
+        else
+          Keyword.get(opts, :nodes_connected_probability)
+        end
+      end
     )
   end
 
@@ -48,8 +101,8 @@ defmodule Packer.Instance do
     )
   end
 
-  @spec generate_graph(pos_integer(), boolean(), :adjacency_list | :adjacency_matrix, float()) ::
-          any()
+  # @spec generate_graph(pos_integer(), boolean(), :adjacency_list | :adjacency_matrix, float()) ::
+  #         any()
   defp generate_graph(num_vertices, directed?, :adjacency_matrix, edge_probability) do
     generate_adjacency_matrix(num_vertices, !directed?, edge_probability)
   end
@@ -70,7 +123,7 @@ defmodule Packer.Instance do
     %{from: Enum.reverse(from), to: Enum.reverse(to)}
   end
 
-  defp generate_adjacency_matrix(num_vertices, symmetric?, edge_probability) do
+  defp generate_adjacency_matrix(num_vertices, symmetric?, edge_probability_fun) do
     Enum.reduce(1..(num_vertices * num_vertices), Map.new(), fn n, acc ->
       row = div(n - 1, num_vertices) + 1
       col = rem(n - 1, num_vertices) + 1
@@ -86,7 +139,7 @@ defmodule Packer.Instance do
             Map.get(acc, (col - 1) * num_vertices + row)
 
           true ->
-            random_bool(edge_probability)
+            random_bool(edge_probability_fun.(row, col))
         end
 
       Map.put(acc, n, value)
@@ -96,25 +149,57 @@ defmodule Packer.Instance do
     |> Enum.chunk_every(num_vertices)
   end
 
-  defp generate_nodes(num_nodes, opts) do
-    Enum.map(1..num_nodes, fn n ->
-      %{
-        node_id: n,
-        memory: random_value(opts[:node_memory_range]),
-        cpu: random_value(opts[:node_load_range]),
-        bandwidth_out: random_value(opts[:node_bandwidth_out_range]),
-        bandwidth_in: random_value(opts[:node_bandwidth_in_range])
-      }
-    end)
+  defp process_home(process_id, opts) do
+    intervals = Keyword.get(opts, :node_split)
+    ## Find the node the process is placed to
+    partition_index(process_id, intervals)
   end
 
-  def generate_processes(num_processes, opts) do
-    Enum.map(1..num_processes, fn n ->
+  def generate_nodes(processes, process_links, opts) do
+    link_tuples = Enum.zip(process_links.from, process_links.to)
+
+    link_out_map =
+      Enum.group_by(
+        link_tuples,
+        fn {from, _to} -> from end,
+        fn {_from, to} -> to end
+      )
+
+    link_in_map =
+      Enum.group_by(
+        link_tuples,
+        fn {_from, to} -> to end,
+        fn {from, _to} -> from end
+      )
+
+    message_volumes = Map.new(processes, fn p -> {p.id, p.message_volume} end)
+
+    process_id_intervals = Keyword.get(opts, :node_split)
+
+    Enum.group_by(processes, fn p -> partition_index(p.id, process_id_intervals) end)
+    |> Enum.map(fn {node_id, node_processes} ->
+      total_process_memory = Enum.sum_by(node_processes, fn p -> p.memory end)
+      total_process_load = Enum.sum_by(node_processes, fn p -> p.load end)
+
+      total_process_traffic_out =
+        Enum.sum_by(node_processes, fn p ->
+          length(Map.get(link_out_map, p.id, [])) * Map.get(message_volumes, p.id)
+        end)
+
+      total_process_traffic_in =
+        Enum.sum_by(node_processes, fn p ->
+          senders = Map.get(link_in_map, p.id, [])
+          Enum.sum_by(senders, fn p_id -> Map.get(message_volumes, p_id) end)
+        end)
+
+      num_processes = length(node_processes)
+
       %{
-        process_id: n,
-        memory: random_value(opts[:process_memory_range]),
-        load: random_value(opts[:process_cpu_load_range]),
-        message_volume: random_value(opts[:process_message_volume_range])
+        node_id: node_id,
+        memory: total_process_memory + random_value(opts[:node_memory_slack]) * num_processes,
+        load: total_process_load + random_value(opts[:node_load_slack]) * num_processes,
+        bandwidth_out: total_process_traffic_out + random_value(opts[:node_bandwidth_out_slack]),
+        bandwidth_in: total_process_traffic_in + random_value(opts[:node_bandwidth_in_slack])
       }
     end)
   end
@@ -129,13 +214,13 @@ defmodule Packer.Instance do
 
   defp default_opts() do
     [
-      node_memory_range: 512..2048,
-      node_load_range: 500..1000,
-      node_bandwidth_out_range: 100..1000,
-      node_bandwidth_in_range: 100..1000,
-      process_memory_range: 256..512,
-      process_cpu_load_range: 100..600,
-      process_message_volume_range: 50..200,
+      node_memory_slack: 50..200,
+      node_load_slack: 50..200,
+      node_bandwidth_out_slack: 500..1000,
+      node_bandwidth_in_slack: 500..1000,
+      process_memory_range: 128..2048,
+      process_load_range: 1000..5000,
+      process_message_volume_range: 500..1000,
       nodes_connected_probability: 0.9,
       processes_linked_probability: 0.1,
       handler: &to_dzn/2
@@ -156,12 +241,12 @@ defmodule Packer.Instance do
     {node_memory, node_load, bandwidth_out, bandwidth_in} =
       Enum.reduce(instance[:nodes], {[], [], [], []}, fn %{
                                                            memory: memory,
-                                                           cpu: cpu,
+                                                           load: load,
                                                            bandwidth_out: b_out,
                                                            bandwidth_in: b_in
                                                          },
                                                          {m_acc, l_acc, b_out_acc, b_in_acc} ->
-        {[memory | m_acc], [cpu | l_acc], [b_out | b_out_acc], [b_in | b_in_acc]}
+        {[memory | m_acc], [load | l_acc], [b_out | b_out_acc], [b_in | b_in_acc]}
       end)
 
     process_links_from = get_in(instance, [:process_links, :from])
@@ -175,11 +260,11 @@ defmodule Packer.Instance do
       topology: Map.get(instance, :topology),
       process_memory: Enum.reverse(process_memory),
       process_load: Enum.reverse(process_load),
-      process_message_volume: process_msg_volume,
+      process_message_volume: Enum.reverse(process_msg_volume),
       node_memory: Enum.reverse(node_memory),
-      node_load: node_load,
-      node_bandwidth_out: bandwidth_out,
-      node_bandwidth_in: bandwidth_in
+      node_load: Enum.reverse(node_load),
+      node_bandwidth_out: Enum.reverse(bandwidth_out),
+      node_bandwidth_in: Enum.reverse(bandwidth_in)
     }
     |> then(fn instance ->
       ## Temporary. There is a bug in solverl

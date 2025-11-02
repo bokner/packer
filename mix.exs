@@ -22,6 +22,7 @@ defmodule ClusterMap.MixProject do
   defp deps do
     [
       {:solverl, "~> 1.1.0"},
+      {:inplace, "~> 0.1"},
       {:replbug, "~> 0.1.0", only: :dev}
     ]
   end

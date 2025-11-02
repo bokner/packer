@@ -36,7 +36,6 @@ defmodule Packer.Checker do
         } = _instance,
         %{"process_placement" => placement} = _solution
       ) do
-
     get_remote_calls(links_from, links_to, placement)
     |> Enum.all?(fn link_id ->
       from = Enum.at(links_from, link_id - 1)
@@ -153,9 +152,10 @@ defmodule Packer.Checker do
     Enum.zip(links_from, links_to)
     |> Enum.with_index(1)
     |> Enum.reduce(MapSet.new(), fn {{from, to}, link_id}, acc ->
-      Enum.at(process_placement, from - 1) != Enum.at(process_placement, to - 1) &&
-      MapSet.put(acc, link_id) || acc
+      (Enum.at(process_placement, from - 1) != Enum.at(process_placement, to - 1) &&
+         MapSet.put(acc, link_id)) || acc
     end)
+
     # {_, remote_calls} =
     #   Enum.reduce(flags, {1, MapSet.new()}, fn remote_call?, {idx, acc} ->
     #     {idx + 1, (remote_call? && MapSet.put(acc, idx)) || acc}
