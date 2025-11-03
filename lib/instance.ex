@@ -192,14 +192,14 @@ defmodule Packer.Instance do
           Enum.sum_by(senders, fn p_id -> Map.get(message_volumes, p_id) end)
         end)
 
-      num_processes = length(node_processes)
+      _num_processes = length(node_processes)
 
       %{
         node_id: node_id,
-        memory: total_process_memory + random_value(opts[:node_memory_slack]) * num_processes,
-        load: total_process_load + random_value(opts[:node_load_slack]) * num_processes,
-        bandwidth_out: total_process_traffic_out + random_value(opts[:node_bandwidth_out_slack]),
-        bandwidth_in: total_process_traffic_in + random_value(opts[:node_bandwidth_in_slack])
+        memory: ceil(total_process_memory * (1 + opts[:node_memory_slack])),
+        load: ceil(total_process_load * (1 + opts[:node_load_slack])),
+        bandwidth_out: ceil(total_process_traffic_out * (1 + opts[:node_bandwidth_out_slack])),
+        bandwidth_in: ceil(total_process_traffic_in * (1 + opts[:node_bandwidth_in_slack]))
       }
     end)
   end
@@ -214,10 +214,10 @@ defmodule Packer.Instance do
 
   defp default_opts() do
     [
-      node_memory_slack: 50..200,
-      node_load_slack: 50..200,
-      node_bandwidth_out_slack: 500..1000,
-      node_bandwidth_in_slack: 500..1000,
+      node_memory_slack: 0.5,
+      node_load_slack: 0.5,
+      node_bandwidth_out_slack: 0.5,
+      node_bandwidth_in_slack: 0.5,
       process_memory_range: 128..2048,
       process_load_range: 1000..5000,
       process_message_volume_range: 500..1000,
